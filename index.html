@@ -140,47 +140,103 @@
 
   /* ========== PRINT STYLES ========== */
   @media print {
-    body * { visibility: hidden; }
-    #print-area, #print-area * { visibility: visible; }
-    #print-area { position: fixed; top: 0; left: 0; width: 100%; padding: 20px; }
-    .no-print { display: none !important; }
+    body > *:not(#print-area) { display: none !important; }
+    #print-area {
+      display: block !important;
+      position: static !important;
+      width: 100%;
+      padding: 0;
+      margin: 0;
+    }
+    .doc-header { page-break-inside: avoid; break-inside: avoid; }
+    .doc-body { page-break-before: avoid; }
   }
 
-  /* PRINT DOCUMENT HEADER */
+  /* PRINT DOCUMENT */
   #print-area {
     display: none;
-    font-family: 'Times New Roman', serif;
-    font-size: 13px;
+    font-family: 'Calibri', 'Arial', sans-serif;
+    font-size: 11pt;
     line-height: 1.6;
+    color: #111;
+    padding: 1cm;
   }
 
   .doc-header {
-    display: grid;
-    grid-template-columns: 1fr 140px 1fr;
-    align-items: center;
-    border: 2px solid #555;
-    border-radius: 10px;
-    padding: 14px 20px;
-    margin-bottom: 28px;
-    gap: 20px;
+    display: table;
+    width: 100%;
+    border: 2px solid #1a3a6b;
+    border-radius: 8px;
+    margin-bottom: 24px;
+    overflow: hidden;
   }
 
-  .doc-header-left { font-size: 12.5px; line-height: 2; }
-  .doc-header-center { text-align: center; }
-  .doc-header-center img { height: 65px; object-fit: contain; display: block; margin: 0 auto 6px; }
-  .doc-header-center .school-name { font-size: 12px; font-weight: 700; color: #1a3a6b; line-height: 1.4; }
-  .doc-header-center .school-arabic { font-family: 'Tajawal', sans-serif; font-size: 11px; color: #c9a227; direction: rtl; margin-top: 2px; }
-  .doc-header-right { font-size: 12.5px; line-height: 2; text-align: right; }
+  .doc-header-row { display: table-row; }
 
-  .doc-body h1 { font-size: 18px; font-weight: 700; margin: 14px 0 6px; }
-  .doc-body h2 { font-size: 15px; font-weight: 700; margin: 12px 0 4px; border-bottom: 1px solid #ccc; padding-bottom: 2px; }
-  .doc-body h3 { font-size: 13px; font-weight: 700; margin: 10px 0 3px; }
-  .doc-body p { margin: 4px 0; }
-  .doc-body ul, .doc-body ol { margin: 4px 0 4px 20px; }
-  .doc-body li { margin: 2px 0; }
-  .doc-body table { width: 100%; border-collapse: collapse; margin: 8px 0; }
-  .doc-body th { background: #1a3a6b; color: white; padding: 6px 8px; font-size: 12px; }
-  .doc-body td { border: 1px solid #ccc; padding: 5px 7px; font-size: 12px; }
+  .doc-header-left {
+    display: table-cell;
+    width: 35%;
+    vertical-align: middle;
+    padding: 12px 16px;
+    font-size: 11pt;
+    line-height: 1.9;
+    border-right: 1px solid #ccc;
+  }
+
+  .doc-header-center {
+    display: table-cell;
+    width: 30%;
+    text-align: center;
+    vertical-align: middle;
+    padding: 12px 10px;
+    border-right: 1px solid #ccc;
+    background: #f8f9ff;
+  }
+
+  .doc-header-center img {
+    height: 60px;
+    object-fit: contain;
+    display: block;
+    margin: 0 auto 4px;
+  }
+
+  .doc-header-center .school-name {
+    font-size: 10pt;
+    font-weight: 700;
+    color: #1a3a6b;
+    line-height: 1.4;
+    margin-top: 4px;
+  }
+
+  .doc-header-center .school-arabic {
+    font-size: 9pt;
+    color: #c9a227;
+    direction: rtl;
+    margin-top: 2px;
+  }
+
+  .doc-header-right {
+    display: table-cell;
+    width: 35%;
+    text-align: right;
+    vertical-align: middle;
+    padding: 12px 16px;
+    font-size: 11pt;
+    line-height: 1.9;
+  }
+
+  .doc-body { margin-top: 8px; }
+  .doc-body h1 { font-size: 16pt; font-weight: 700; margin: 16px 0 8px; color: #1a3a6b; border-bottom: 2px solid #1a3a6b; padding-bottom: 4px; }
+  .doc-body h2 { font-size: 13pt; font-weight: 700; margin: 14px 0 6px; color: #1a3a6b; border-bottom: 1px solid #ccc; padding-bottom: 3px; }
+  .doc-body h3 { font-size: 11.5pt; font-weight: 700; margin: 10px 0 4px; color: #333; }
+  .doc-body p { margin: 5px 0; }
+  .doc-body ul, .doc-body ol { margin: 5px 0 5px 22px; }
+  .doc-body li { margin: 3px 0; }
+  .doc-body strong { font-weight: 700; }
+  .doc-body table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+  .doc-body th { background: #1a3a6b; color: white; padding: 7px 10px; font-size: 10pt; text-align: left; }
+  .doc-body td { border: 1px solid #ccc; padding: 6px 10px; font-size: 10pt; }
+  .doc-body tr:nth-child(even) td { background: #f5f7ff; }
 
   .upload-box {
     border: 2px dashed var(--border);
@@ -350,13 +406,15 @@
 <!-- HIDDEN PRINT AREA -->
 <div id="print-area">
   <div class="doc-header">
-    <div class="doc-header-left" id="print-left"></div>
-    <div class="doc-header-center">
-      <img id="print-logo" src="" alt="School Logo" />
-      <div class="school-name" id="print-school-name"></div>
-      <div class="school-arabic" id="print-school-arabic"></div>
+    <div class="doc-header-row">
+      <div class="doc-header-left" id="print-left"></div>
+      <div class="doc-header-center">
+        <img id="print-logo" src="" alt="School Logo" />
+        <div class="school-name" id="print-school-name"></div>
+        <div class="school-arabic" id="print-school-arabic"></div>
+      </div>
+      <div class="doc-header-right" id="print-right"></div>
     </div>
-    <div class="doc-header-right" id="print-right"></div>
   </div>
   <div class="doc-body" id="print-body"></div>
 </div>
@@ -601,87 +659,110 @@ async function generate() {
   }
 }
 
-function preparePrintArea() {
+function preparePrintArea(logoSrc) {
   const grade = document.getElementById('grade-select').value;
   const subject = document.getElementById('subject-select').value;
   const topic = document.getElementById('topic-input').value.trim();
   const teacher = document.getElementById('teacher-input').value.trim();
   const school = getSchoolName(grade);
 
-  document.getElementById('print-logo').src = getLogoPath(grade);
+  document.getElementById('print-logo').src = logoSrc || '';
+  document.getElementById('print-logo').style.display = logoSrc ? 'block' : 'none';
   document.getElementById('print-school-name').textContent = school.en;
   document.getElementById('print-school-arabic').textContent = school.ar;
 
   document.getElementById('print-left').innerHTML =
-    `Name: ……………………………………<br>
-     Grade: ${grade}<br>
-     Subject: ${subject}<br>
-     Teacher: ${teacher || '………………………………'}`;
+    '<b>Name:</b> ……………………………………<br>' +
+    '<b>Grade:</b> ' + grade + '<br>' +
+    '<b>Subject:</b> ' + subject + '<br>' +
+    '<b>Teacher:</b> ' + (teacher || '………………………………');
 
   document.getElementById('print-right').innerHTML =
-    `Date: ……………………………………<br>
-     Material: ${topic}`;
+    '<b>Date:</b> ……………………………………<br>' +
+    '<b>Material:</b> ' + topic;
 
   document.getElementById('print-body').innerHTML = lastGeneratedHTML;
 }
 
-function printDoc() {
-  preparePrintArea();
-  document.getElementById('print-area').style.display = 'block';
-  window.print();
-  document.getElementById('print-area').style.display = 'none';
+function getLogoAsBase64(path) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      canvas.getContext('2d').drawImage(img, 0, 0);
+      try { resolve(canvas.toDataURL('image/png')); }
+      catch(e) { resolve(path); }
+    };
+    img.onerror = () => resolve(path);
+    img.src = path;
+  });
 }
 
-function downloadWord() {
+async function printDoc() {
+  const logoSrc = await getLogoAsBase64(getLogoPath(
+    document.getElementById('grade-select').value
+  ));
+  preparePrintArea(logoSrc);
+  document.getElementById('print-area').style.display = 'block';
+  setTimeout(() => {
+    window.print();
+    document.getElementById('print-area').style.display = 'none';
+  }, 300);
+}
+
+async function downloadWord() {
   const grade = document.getElementById('grade-select').value;
   const subject = document.getElementById('subject-select').value;
   const topic = document.getElementById('topic-input').value.trim();
   const teacher = document.getElementById('teacher-input').value.trim();
   const school = getSchoolName(grade);
+  const logoSrc = await getLogoAsBase64(getLogoPath(grade));
 
-  const header = `
-    <table style="width:100%;border:2px solid #555;border-radius:8px;border-collapse:separate;border-spacing:0">
-      <tr>
-        <td style="width:34%;vertical-align:top;font-size:12pt;line-height:2;padding:14px 16px;border-right:1px solid #ddd">
-          <b>Name:</b> ……………………………………<br>
-          <b>Grade:</b> ${grade}<br>
-          <b>Subject:</b> ${subject}<br>
-          <b>Teacher:</b> ${teacher || '………………………………'}
-        </td>
-        <td style="width:32%;text-align:center;vertical-align:middle;padding:14px 10px;border-right:1px solid #ddd">
-          <img src="${getLogoPath(grade)}" style="height:65px;display:block;margin:0 auto 6px"><br>
-          <b style="color:#1a3a6b;font-size:11pt">${school.en}</b><br>
-          <span style="color:#c9a227;font-size:10pt;font-family:Arial">${school.ar}</span>
-        </td>
-        <td style="width:34%;text-align:right;vertical-align:top;font-size:12pt;line-height:2;padding:14px 16px">
-          <b>Date:</b> ……………………………………<br>
-          <b>Material:</b> ${topic}
-        </td>
-      </tr>
-    </table>
-    <br><br>
-  `;
+  const header =
+    '<table style="width:100%;border-collapse:collapse;border:2px solid #1a3a6b;margin-bottom:20pt">' +
+    '<tr>' +
+    '<td style="width:35%;vertical-align:middle;padding:10pt 12pt;border-right:1pt solid #ccc;font-size:11pt;line-height:1.9">' +
+    '<b>Name:</b> ……………………………………<br>' +
+    '<b>Grade:</b> ' + grade + '<br>' +
+    '<b>Subject:</b> ' + subject + '<br>' +
+    '<b>Teacher:</b> ' + (teacher || '………………………………') +
+    '</td>' +
+    '<td style="width:30%;text-align:center;vertical-align:middle;padding:10pt;border-right:1pt solid #ccc;background:#f8f9ff">' +
+    '<img src="' + logoSrc + '" style="height:55pt;display:block;margin:0 auto 4pt"><br>' +
+    '<b style="color:#1a3a6b;font-size:10pt">' + school.en + '</b><br>' +
+    '<span style="color:#c9a227;font-size:9pt">' + school.ar + '</span>' +
+    '</td>' +
+    '<td style="width:35%;text-align:right;vertical-align:middle;padding:10pt 12pt;font-size:11pt;line-height:1.9">' +
+    '<b>Date:</b> ……………………………………<br>' +
+    '<b>Material:</b> ' + topic +
+    '</td>' +
+    '</tr></table>';
 
-  const html = `
-    <html xmlns:o='urn:schemas-microsoft-com:office:office'
-          xmlns:w='urn:schemas-microsoft-com:office:word'
-          xmlns='http://www.w3.org/TR/REC-html40'>
-    <head>
-      <meta charset='utf-8'>
-      <title>${subject} - ${topic}</title>
-      <!--[if gte mso 9]>
-      <xml><w:WordDocument><w:View>Print</w:View></w:WordDocument></xml>
-      <![endif]-->
-      <style>
-        body { font-family: 'Times New Roman', serif; font-size: 12pt; margin: 2cm; }
-        h1 { font-size: 16pt; } h2 { font-size: 14pt; } h3 { font-size: 12pt; }
-        table { border-collapse: collapse; width: 100%; }
-        td, th { border: 1px solid #999; padding: 5px; }
-      </style>
-    </head>
-    <body>${header}${lastGeneratedHTML}</body></html>`;
+  const bodyCSS =
+    'body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; margin: 2cm 2.5cm; color: #111; }' +
+    'h1 { font-size: 16pt; color: #1a3a6b; border-bottom: 2pt solid #1a3a6b; padding-bottom: 3pt; margin: 14pt 0 6pt; }' +
+    'h2 { font-size: 13pt; color: #1a3a6b; border-bottom: 1pt solid #ccc; padding-bottom: 2pt; margin: 12pt 0 5pt; }' +
+    'h3 { font-size: 11.5pt; font-weight: bold; margin: 10pt 0 4pt; }' +
+    'p { margin: 4pt 0; line-height: 1.6; }' +
+    'ul, ol { margin: 4pt 0 4pt 20pt; }' +
+    'li { margin: 2pt 0; }' +
+    'table { border-collapse: collapse; width: 100%; margin: 8pt 0; }' +
+    'th { background: #1a3a6b; color: white; padding: 6pt 8pt; font-size: 10pt; text-align: left; }' +
+    'td { border: 1pt solid #ccc; padding: 5pt 8pt; font-size: 10pt; }' +
+    'tr:nth-child(even) td { background: #f5f7ff; }' +
+    'strong { font-weight: bold; }';
 
-  const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+  const html =
+    '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">' +
+    '<head><meta charset="utf-8">' +
+    '<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom><w:DoNotOptimizeForBrowser/></w:WordDocument></xml><![endif]-->' +
+    '<style>' + bodyCSS + '</style></head>' +
+    '<body>' + header + lastGeneratedHTML + '</body></html>';
+
+  const blob = new Blob(['﻿', html], { type: 'application/msword' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
