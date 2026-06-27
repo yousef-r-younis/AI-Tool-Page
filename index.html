@@ -1,9 +1,11 @@
+
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>NBS-LNS Teacher AI Assistant</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Tajawal:wght@400;500;700&display=swap');
 
@@ -29,12 +31,8 @@
     min-height: 100vh;
   }
 
-  body.ar {
-    font-family: 'Tajawal', sans-serif;
-    direction: rtl;
-  }
+  body.ar { font-family: 'Tajawal', sans-serif; direction: rtl; }
 
-  /* HEADER */
   header {
     background: var(--primary);
     padding: 16px 32px;
@@ -44,292 +42,151 @@
     box-shadow: 0 2px 8px rgba(26,86,196,0.3);
   }
 
-  .header-logo {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
+  .header-logo { display: flex; align-items: center; gap: 12px; }
+  .logo-icon { width: 40px; height: 40px; background: white; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+  .logo-text { color: white; }
+  .logo-text h1 { font-size: 16px; font-weight: 700; }
+  .logo-text p { font-size: 11px; opacity: 0.75; margin-top: 1px; }
 
-  .logo-icon {
-    width: 40px;
-    height: 40px;
-    background: white;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 20px;
-  }
+  .lang-toggle { display: flex; background: rgba(255,255,255,0.15); border-radius: 8px; overflow: hidden; }
+  .lang-btn { padding: 7px 16px; border: none; background: transparent; color: rgba(255,255,255,0.7); font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+  .lang-btn.active { background: white; color: var(--primary); }
 
-  .logo-text {
-    color: white;
-  }
+  main { max-width: 860px; margin: 0 auto; padding: 32px 16px; }
 
-  .logo-text h1 {
-    font-size: 16px;
-    font-weight: 700;
-    letter-spacing: 0.3px;
-  }
+  .step-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--primary); margin-bottom: 8px; }
+  .section-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; color: var(--text); }
 
-  .logo-text p {
-    font-size: 11px;
-    opacity: 0.75;
-    margin-top: 1px;
-  }
+  .card { background: var(--card); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow); margin-bottom: 20px; border: 1px solid var(--border); }
 
-  .lang-toggle {
-    display: flex;
-    background: rgba(255,255,255,0.15);
-    border-radius: 8px;
-    overflow: hidden;
-  }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
 
-  .lang-btn {
-    padding: 7px 16px;
-    border: none;
-    background: transparent;
-    color: rgba(255,255,255,0.7);
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .lang-btn.active {
-    background: white;
-    color: var(--primary);
-  }
-
-  /* MAIN */
-  main {
-    max-width: 860px;
-    margin: 0 auto;
-    padding: 32px 16px;
-  }
-
-  .step-label {
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: var(--primary);
-    margin-bottom: 8px;
-  }
-
-  .section-title {
-    font-size: 18px;
-    font-weight: 700;
-    margin-bottom: 16px;
-    color: var(--text);
-  }
-
-  .card {
-    background: var(--card);
-    border-radius: var(--radius);
-    padding: 24px;
-    box-shadow: var(--shadow);
-    margin-bottom: 20px;
-    border: 1px solid var(--border);
-  }
-
-  /* SELECTORS */
-  .grid-2 {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-  }
-
-  .field label {
-    display: block;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--muted);
-    margin-bottom: 6px;
-  }
-
+  .field label { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
   .field select, .field textarea, .field input {
-    width: 100%;
-    padding: 10px 14px;
-    border: 1.5px solid var(--border);
-    border-radius: 8px;
-    font-size: 14px;
-    font-family: inherit;
-    background: white;
-    color: var(--text);
-    outline: none;
-    transition: border-color 0.2s;
-    appearance: none;
+    width: 100%; padding: 10px 14px; border: 1.5px solid var(--border);
+    border-radius: 8px; font-size: 14px; font-family: inherit;
+    background: white; color: var(--text); outline: none; transition: border-color 0.2s; appearance: none;
   }
-
   .field select {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236B7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 12px center;
-    padding-right: 32px;
+    background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px;
   }
+  body.ar .field select { background-position: left 12px center; padding-right: 14px; padding-left: 32px; }
+  .field select:focus, .field textarea:focus, .field input:focus { border-color: var(--primary); }
+  .field textarea { resize: vertical; min-height: 90px; line-height: 1.5; }
 
-  body.ar .field select {
-    background-position: left 12px center;
-    padding-right: 14px;
-    padding-left: 32px;
-  }
-
-  .field select:focus, .field textarea:focus {
-    border-color: var(--primary);
-  }
-
-  .field textarea {
-    resize: vertical;
-    min-height: 90px;
-    line-height: 1.5;
-  }
-
-  /* OUTPUT TYPE PILLS */
-  .output-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
+  .output-grid { display: flex; flex-wrap: wrap; gap: 8px; }
   .output-pill {
-    padding: 8px 16px;
-    border-radius: 20px;
-    border: 1.5px solid var(--border);
-    background: white;
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.18s;
-    color: var(--muted);
+    padding: 8px 16px; border-radius: 20px; border: 1.5px solid var(--border);
+    background: white; font-size: 13px; font-weight: 500; cursor: pointer;
+    transition: all 0.18s; color: var(--muted);
   }
+  .output-pill:hover { border-color: var(--primary); color: var(--primary); }
+  .output-pill.selected { background: var(--primary); border-color: var(--primary); color: white; }
 
-  .output-pill:hover {
-    border-color: var(--primary);
-    color: var(--primary);
-  }
-
-  .output-pill.selected {
-    background: var(--primary);
-    border-color: var(--primary);
-    color: white;
-  }
-
-  /* GENERATE BUTTON */
   .generate-btn {
-    width: 100%;
-    padding: 14px;
-    background: var(--primary);
-    color: white;
-    border: none;
-    border-radius: 10px;
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-    font-family: inherit;
-    transition: background 0.2s, transform 0.1s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
+    width: 100%; padding: 14px; background: var(--primary); color: white;
+    border: none; border-radius: 10px; font-size: 15px; font-weight: 600;
+    cursor: pointer; font-family: inherit; transition: background 0.2s, transform 0.1s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
   }
-
   .generate-btn:hover { background: #1446A8; }
   .generate-btn:active { transform: scale(0.99); }
   .generate-btn:disabled { background: #9BB3E8; cursor: not-allowed; }
 
-  /* OUTPUT */
-  .output-card {
-    display: none;
-  }
+  .output-card { display: none; }
+  .output-card.visible { display: block; }
 
-  .output-card.visible {
-    display: block;
-  }
+  .output-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }
+  .output-badge { background: #DCFCE7; color: #16A34A; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 20px; }
 
-  .output-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 16px;
+  .export-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+  .action-btn {
+    padding: 7px 16px; border: none; border-radius: 7px;
+    font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: background 0.2s;
   }
-
-  .output-badge {
-    background: #DCFCE7;
-    color: #16A34A;
-    font-size: 12px;
-    font-weight: 600;
-    padding: 4px 10px;
-    border-radius: 20px;
-  }
-
-  .copy-btn {
-    padding: 7px 16px;
-    background: var(--primary-light);
-    color: var(--primary);
-    border: none;
-    border-radius: 7px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    font-family: inherit;
-    transition: background 0.2s;
-  }
-
+  .copy-btn { background: var(--primary-light); color: var(--primary); }
   .copy-btn:hover { background: #dce8fa; }
+  .print-btn { background: #F0FDF4; color: #16A34A; }
+  .print-btn:hover { background: #dcfce7; }
+  .word-btn { background: #EFF6FF; color: #2563EB; }
+  .word-btn:hover { background: #dbeafe; }
 
+  /* RENDERED MARKDOWN OUTPUT */
   .output-content {
-    background: var(--bg);
-    border-radius: 8px;
-    padding: 20px;
-    font-size: 14px;
-    line-height: 1.8;
-    white-space: pre-wrap;
-    border: 1px solid var(--border);
-    min-height: 200px;
-    max-height: 600px;
-    overflow-y: auto;
+    background: var(--bg); border-radius: 8px; padding: 20px;
+    border: 1px solid var(--border); min-height: 200px; max-height: 600px;
+    overflow-y: auto; font-size: 14px; line-height: 1.8;
   }
+  .output-content h1 { font-size: 20px; font-weight: 700; margin: 16px 0 8px; color: var(--primary); }
+  .output-content h2 { font-size: 17px; font-weight: 700; margin: 14px 0 6px; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 4px; }
+  .output-content h3 { font-size: 15px; font-weight: 600; margin: 12px 0 4px; }
+  .output-content p { margin: 6px 0; }
+  .output-content ul, .output-content ol { margin: 6px 0 6px 20px; }
+  .output-content li { margin: 3px 0; }
+  .output-content strong { font-weight: 700; }
+  .output-content table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+  .output-content th { background: var(--primary); color: white; padding: 8px; text-align: left; font-size: 13px; }
+  .output-content td { border: 1px solid var(--border); padding: 7px 8px; font-size: 13px; }
+  .output-content tr:nth-child(even) td { background: #f9fafb; }
 
-  /* LOADING */
-  .loading {
-    display: none;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    padding: 40px;
-    color: var(--muted);
-    font-size: 14px;
-  }
-
+  .loading { display: none; align-items: center; justify-content: center; gap: 10px; padding: 40px; color: var(--muted); font-size: 14px; }
   .loading.visible { display: flex; }
-
-  .spinner {
-    width: 20px;
-    height: 20px;
-    border: 2.5px solid var(--border);
-    border-top-color: var(--primary);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-
+  .spinner { width: 20px; height: 20px; border: 2.5px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  .error-msg {
-    display: none;
-    background: #FEF2F2;
-    color: #DC2626;
-    padding: 12px 16px;
-    border-radius: 8px;
-    font-size: 13px;
-    border: 1px solid #FECACA;
-    margin-top: 12px;
-  }
-
+  .error-msg { display: none; background: #FEF2F2; color: #DC2626; padding: 12px 16px; border-radius: 8px; font-size: 13px; border: 1px solid #FECACA; margin-top: 12px; }
   .error-msg.visible { display: block; }
 
+  /* ========== PRINT STYLES ========== */
+  @media print {
+    body * { visibility: hidden; }
+    #print-area, #print-area * { visibility: visible; }
+    #print-area { position: fixed; top: 0; left: 0; width: 100%; padding: 20px; }
+    .no-print { display: none !important; }
+  }
+
+  /* PRINT DOCUMENT HEADER */
+  #print-area {
+    display: none;
+    font-family: 'Times New Roman', serif;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .doc-header {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    border: 2px solid #333;
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 24px;
+    gap: 16px;
+  }
+
+  .doc-header-left { font-size: 13px; line-height: 1.9; }
+  .doc-header-center { text-align: center; }
+  .doc-header-center img { height: 60px; object-fit: contain; display: block; margin: 0 auto 4px; }
+  .doc-header-center .school-name { font-size: 13px; font-weight: 700; color: #1a3a6b; }
+  .doc-header-center .school-arabic { font-family: 'Tajawal', sans-serif; font-size: 12px; color: #c9a227; direction: rtl; }
+  .doc-header-right { font-size: 13px; line-height: 1.9; text-align: right; }
+
+  .doc-body h1 { font-size: 18px; font-weight: 700; margin: 14px 0 6px; }
+  .doc-body h2 { font-size: 15px; font-weight: 700; margin: 12px 0 4px; border-bottom: 1px solid #ccc; padding-bottom: 2px; }
+  .doc-body h3 { font-size: 13px; font-weight: 700; margin: 10px 0 3px; }
+  .doc-body p { margin: 4px 0; }
+  .doc-body ul, .doc-body ol { margin: 4px 0 4px 20px; }
+  .doc-body li { margin: 2px 0; }
+  .doc-body table { width: 100%; border-collapse: collapse; margin: 8px 0; }
+  .doc-body th { background: #1a3a6b; color: white; padding: 6px 8px; font-size: 12px; }
+  .doc-body td { border: 1px solid #ccc; padding: 5px 7px; font-size: 12px; }
+
   @media (max-width: 600px) {
-    .grid-2 { grid-template-columns: 1fr; }
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
     header { padding: 14px 16px; }
+    .export-btns { justify-content: flex-start; }
   }
 </style>
 </head>
@@ -340,7 +197,7 @@
     <div class="logo-icon">🎓</div>
     <div class="logo-text">
       <h1 id="header-title">NBS-LNS Teacher AI Assistant</h1>
-      <p id="header-sub">Powered by Gemini AI</p>
+      <p id="header-sub">Powered by AI</p>
     </div>
   </div>
   <div class="lang-toggle">
@@ -351,15 +208,15 @@
 
 <main>
 
-  <!-- STEP 1: Grade & Subject -->
+  <!-- STEP 1 -->
   <div class="card">
     <div class="step-label" id="step1-label">Step 1</div>
     <div class="section-title" id="step1-title">Select Grade & Subject</div>
-    <div class="grid-2">
+    <div class="grid-3">
       <div class="field">
         <label id="grade-label">Grade</label>
         <select id="grade-select">
-          <option value="" id="grade-placeholder">-- Select Grade --</option>
+          <option value="">-- Select Grade --</option>
           <option value="KG1">KG1</option>
           <option value="KG2">KG2</option>
           <option value="KG3">KG3</option>
@@ -382,7 +239,7 @@
       <div class="field">
         <label id="subject-label">Subject</label>
         <select id="subject-select">
-          <option value="" id="subject-placeholder">-- Select Subject --</option>
+          <option value="">-- Select Subject --</option>
           <option value="English">English</option>
           <option value="Arabic">Arabic</option>
           <option value="Math">Math</option>
@@ -400,10 +257,14 @@
           <option value="AI">AI</option>
         </select>
       </div>
+      <div class="field">
+        <label id="teacher-label">Teacher Name</label>
+        <input type="text" id="teacher-input" placeholder="Your name..." />
+      </div>
     </div>
   </div>
 
-  <!-- STEP 2: Output Type -->
+  <!-- STEP 2 -->
   <div class="card">
     <div class="step-label" id="step2-label">Step 2</div>
     <div class="section-title" id="step2-title">What do you need?</div>
@@ -419,7 +280,7 @@
     </div>
   </div>
 
-  <!-- STEP 3: Topic + Notes -->
+  <!-- STEP 3 -->
   <div class="card">
     <div class="step-label" id="step3-label">Step 3</div>
     <div class="section-title" id="step3-title">Topic & Notes</div>
@@ -429,17 +290,14 @@
     </div>
     <div class="field">
       <label id="notes-label">Extra Notes (optional)</label>
-      <textarea id="notes-input" placeholder="e.g. Focus on multiple choice, include diagrams, beginner level, 30 minutes duration..."></textarea>
+      <textarea id="notes-input" placeholder="e.g. Focus on multiple choice, include diagrams, beginner level, 30 minutes..."></textarea>
     </div>
   </div>
 
-  <!-- GENERATE -->
   <button class="generate-btn" onclick="generate()" id="gen-btn">
-    <span>✨</span>
-    <span id="gen-btn-text">Generate</span>
+    <span>✨</span><span id="gen-btn-text">Generate</span>
   </button>
 
-  <!-- LOADING -->
   <div class="loading" id="loading">
     <div class="spinner"></div>
     <span id="loading-text">Generating your content...</span>
@@ -454,9 +312,11 @@
         <div class="step-label" id="output-label">Output</div>
         <div class="section-title" id="output-title-text">Generated Content</div>
       </div>
-      <div style="display:flex;gap:8px;align-items:center">
+      <div class="export-btns">
         <span class="output-badge" id="output-badge">✓ Ready</span>
-        <button class="copy-btn" onclick="copyOutput()" id="copy-btn">Copy</button>
+        <button class="action-btn copy-btn" onclick="copyOutput()" id="copy-btn">📋 Copy</button>
+        <button class="action-btn print-btn" onclick="printDoc()">🖨️ Print / PDF</button>
+        <button class="action-btn word-btn" onclick="downloadWord()">📄 Word</button>
       </div>
     </div>
     <div class="output-content" id="output-content"></div>
@@ -464,72 +324,62 @@
 
 </main>
 
-<script>
-const GEMINI_URL = "YOUR_WORKER_URL_HERE"; // e.g. https://teacher-proxy.yourname.workers.dev
+<!-- HIDDEN PRINT AREA -->
+<div id="print-area">
+  <div class="doc-header">
+    <div class="doc-header-left" id="print-left"></div>
+    <div class="doc-header-center">
+      <img id="print-logo" src="" alt="School Logo" />
+      <div class="school-name" id="print-school-name"></div>
+      <div class="school-arabic" id="print-school-arabic"></div>
+    </div>
+    <div class="doc-header-right" id="print-right"></div>
+  </div>
+  <div class="doc-body" id="print-body"></div>
+</div>
 
+<script>
+const WORKER_URL = "https://gemini-proxy.yousef-r-younis.workers.dev";
 let currentLang = 'en';
 let selectedOutput = '';
+let lastGeneratedHTML = '';
 
 const translations = {
   en: {
     headerTitle: "NBS-LNS Teacher AI Assistant",
-    headerSub: "Powered by Gemini AI",
-    step1Label: "Step 1",
-    step1Title: "Select Grade & Subject",
-    step2Label: "Step 2",
-    step2Title: "What do you need?",
-    step3Label: "Step 3",
-    step3Title: "Topic & Notes",
-    gradeLabel: "Grade",
-    subjectLabel: "Subject",
-    gradePlaceholder: "-- Select Grade --",
-    subjectPlaceholder: "-- Select Subject --",
-    topicLabel: "Topic / Chapter",
-    topicPlaceholder: "e.g. Photosynthesis, World War II, Quadratic Equations...",
-    notesLabel: "Extra Notes (optional)",
-    notesPlaceholder: "e.g. Focus on multiple choice, include diagrams, beginner level, 30 minutes...",
-    generateBtn: "Generate",
-    generating: "Generating your content...",
-    outputLabel: "Output",
-    outputTitle: "Generated Content",
-    outputBadge: "✓ Ready",
-    copyBtn: "Copy",
-    copied: "Copied!",
-    errorGrade: "Please select a grade.",
-    errorSubject: "Please select a subject.",
-    errorOutput: "Please select an output type.",
-    errorTopic: "Please enter a topic.",
+    headerSub: "Powered by AI",
+    step1Label: "Step 1", step1Title: "Select Grade, Subject & Teacher",
+    step2Label: "Step 2", step2Title: "What do you need?",
+    step3Label: "Step 3", step3Title: "Topic & Notes",
+    gradeLabel: "Grade", subjectLabel: "Subject", teacherLabel: "Teacher Name",
+    gradePlaceholder: "-- Select Grade --", subjectPlaceholder: "-- Select Subject --",
+    teacherPlaceholder: "Your name...",
+    topicLabel: "Topic / Chapter", topicPlaceholder: "e.g. Photosynthesis, World War II, Quadratic Equations...",
+    notesLabel: "Extra Notes (optional)", notesPlaceholder: "e.g. Focus on MCQ, include diagrams, 30 minutes...",
+    generateBtn: "Generate", generating: "Generating your content...",
+    outputLabel: "Output", outputTitle: "Generated Content", outputBadge: "✓ Ready",
+    copyBtn: "📋 Copy", copied: "✓ Copied!",
+    errorGrade: "Please select a grade.", errorSubject: "Please select a subject.",
+    errorOutput: "Please select an output type.", errorTopic: "Please enter a topic.",
     outputTypes: ["📋 Lesson Plan","📝 Worksheet","❓ Quiz","📄 Exam","🏠 Homework","✅ Answer Key","💡 Project Ideas","🖼️ Poster Content"],
     outputValues: ["Lesson Plan","Worksheet","Quiz","Exam","Homework","Answer Key","Project Ideas","Poster Content"],
   },
   ar: {
     headerTitle: "المساعد التعليمي الذكي - NBS-LNS",
     headerSub: "مدعوم بالذكاء الاصطناعي",
-    step1Label: "الخطوة الأولى",
-    step1Title: "اختر الصف والمادة",
-    step2Label: "الخطوة الثانية",
-    step2Title: "ماذا تحتاج؟",
-    step3Label: "الخطوة الثالثة",
-    step3Title: "الموضوع والملاحظات",
-    gradeLabel: "الصف",
-    subjectLabel: "المادة",
-    gradePlaceholder: "-- اختر الصف --",
-    subjectPlaceholder: "-- اختر المادة --",
-    topicLabel: "الموضوع / الفصل",
-    topicPlaceholder: "مثال: التمثيل الضوئي، الحرب العالمية الثانية، المعادلات التربيعية...",
-    notesLabel: "ملاحظات إضافية (اختياري)",
-    notesPlaceholder: "مثال: ركّز على الاختيار من متعدد، أضف رسوماً توضيحية، مستوى مبتدئ، مدة 30 دقيقة...",
-    generateBtn: "توليد المحتوى",
-    generating: "جاري توليد المحتوى...",
-    outputLabel: "النتيجة",
-    outputTitle: "المحتوى المُولَّد",
-    outputBadge: "✓ جاهز",
-    copyBtn: "نسخ",
-    copied: "تم النسخ!",
-    errorGrade: "يرجى اختيار الصف.",
-    errorSubject: "يرجى اختيار المادة.",
-    errorOutput: "يرجى اختيار نوع المحتوى.",
-    errorTopic: "يرجى إدخال الموضوع.",
+    step1Label: "الخطوة الأولى", step1Title: "اختر الصف والمادة والمعلم",
+    step2Label: "الخطوة الثانية", step2Title: "ماذا تحتاج؟",
+    step3Label: "الخطوة الثالثة", step3Title: "الموضوع والملاحظات",
+    gradeLabel: "الصف", subjectLabel: "المادة", teacherLabel: "اسم المعلم",
+    gradePlaceholder: "-- اختر الصف --", subjectPlaceholder: "-- اختر المادة --",
+    teacherPlaceholder: "اسمك...",
+    topicLabel: "الموضوع / الفصل", topicPlaceholder: "مثال: التمثيل الضوئي، الحرب العالمية الثانية...",
+    notesLabel: "ملاحظات إضافية (اختياري)", notesPlaceholder: "مثال: اختيار من متعدد، رسوم توضيحية، 30 دقيقة...",
+    generateBtn: "توليد المحتوى", generating: "جاري توليد المحتوى...",
+    outputLabel: "النتيجة", outputTitle: "المحتوى المُولَّد", outputBadge: "✓ جاهز",
+    copyBtn: "📋 نسخ", copied: "✓ تم النسخ!",
+    errorGrade: "يرجى اختيار الصف.", errorSubject: "يرجى اختيار المادة.",
+    errorOutput: "يرجى اختيار نوع المحتوى.", errorTopic: "يرجى إدخال الموضوع.",
     outputTypes: ["📋 خطة درس","📝 ورقة عمل","❓ اختبار قصير","📄 امتحان","🏠 واجب منزلي","✅ مفتاح الإجابات","💡 أفكار مشاريع","🖼️ محتوى بوستر"],
     outputValues: ["Lesson Plan","Worksheet","Quiz","Exam","Homework","Answer Key","Project Ideas","Poster Content"],
   }
@@ -557,8 +407,10 @@ function applyTranslations(lang) {
   document.getElementById('step3-title').textContent = t.step3Title;
   document.getElementById('grade-label').textContent = t.gradeLabel;
   document.getElementById('subject-label').textContent = t.subjectLabel;
+  document.getElementById('teacher-label').textContent = t.teacherLabel;
   document.getElementById('grade-select').options[0].textContent = t.gradePlaceholder;
   document.getElementById('subject-select').options[0].textContent = t.subjectPlaceholder;
+  document.getElementById('teacher-input').placeholder = t.teacherPlaceholder;
   document.getElementById('topic-label').textContent = t.topicLabel;
   document.getElementById('topic-input').placeholder = t.topicPlaceholder;
   document.getElementById('notes-label').textContent = t.notesLabel;
@@ -570,7 +422,6 @@ function applyTranslations(lang) {
   document.getElementById('output-badge').textContent = t.outputBadge;
   document.getElementById('copy-btn').textContent = t.copyBtn;
 
-  // Rebuild output pills
   const grid = document.getElementById('output-grid');
   grid.innerHTML = '';
   t.outputTypes.forEach((label, i) => {
@@ -589,39 +440,47 @@ function selectOutput(btn) {
   selectedOutput = btn.dataset.value;
 }
 
-function buildPrompt(grade, subject, outputType, topic, notes, lang) {
-  const outputLang = (subject === 'Arabic') ? 'Arabic' : 'English';
-  const langNote = lang === 'ar' ? 'Write labels and structure headings in Arabic, but the content language depends on the subject.' : '';
+function getLogoPath(grade) {
+  const lnsGrades = ['Grade 7','Grade 8','Grade 9','Grade 10','Grade 11','Grade 12','Grade 12 - Life Science','Grade 12 - SE'];
+  return lnsGrades.includes(grade) ? 'lnslogo.jpg' : 'nbslogo.jpg';
+}
 
+function getSchoolName(grade) {
+  const lnsGrades = ['Grade 7','Grade 8','Grade 9','Grade 10','Grade 11','Grade 12','Grade 12 - Life Science','Grade 12 - SE'];
+  return lnsGrades.includes(grade)
+    ? { en: 'Lebanese National School', ar: 'الثانوية الوطنية اللبنانية' }
+    : { en: 'National Baptist School', ar: 'المدرسة الوطنية المعمدانية' };
+}
+
+function buildPrompt(grade, subject, outputType, topic, notes) {
+  const outputLang = (subject === 'Arabic') ? 'Arabic' : 'English';
   const subjectPrompts = {
     'Physics': 'Include formulas, units, and real-world examples. Use structured sections.',
     'Chemistry': 'Include equations, safety notes where relevant, and clear examples.',
-    'Biology': 'Use scientific terminology. Include diagrams description if helpful.',
+    'Biology': 'Use scientific terminology. Include diagram descriptions if helpful.',
     'Math': 'Include step-by-step solutions. Use numbered problems with clear working.',
-    'English': 'Focus on language skills (grammar, vocabulary, comprehension, writing). Use examples in context.',
+    'English': 'Focus on language skills (grammar, vocabulary, comprehension, writing).',
     'Arabic': 'Focus on language skills in Arabic (قواعد، مفردات، تعبير، قراءة). All content must be in Arabic.',
     'History': 'Include dates, key figures, causes and effects. Use chronological order.',
-    'Geography': 'Include maps references, climate, population, or economic data as relevant.',
+    'Geography': 'Include map references, climate, population, or economic data as relevant.',
     'Science': 'Use age-appropriate scientific method and simple experiments where relevant.',
     'Civics': 'Focus on rights, duties, laws, and civil participation.',
     'Philosophy': 'Include key thinkers, concepts, and critical thinking questions.',
     'Social Studies': 'Connect to daily life and community. Use examples from Lebanon where relevant.',
     'Sociology': 'Include social theories, real-world case studies, and critical analysis.',
-    'Economics': 'Include key concepts, graphs description, and real-world economic examples.',
+    'Economics': 'Include key concepts, graph descriptions, and real-world economic examples.',
     'AI': 'Use practical examples, tools, and hands-on activities. Keep it engaging and modern.',
   };
-
   const outputInstructions = {
-    'Lesson Plan': `Create a complete lesson plan with: Objectives, Materials, Hook/Introduction, Main Activity (step-by-step), Practice, Closure/Summary, and Assessment. Be detailed and practical.`,
-    'Worksheet': `Create a student worksheet with clear instructions, varied question types (fill-in, short answer, matching, etc.), and appropriate difficulty for the grade level.`,
-    'Quiz': `Create a short quiz (10-15 questions) with a mix of question types. Include an answer key at the end.`,
-    'Exam': `Create a comprehensive exam with multiple sections (MCQ, True/False, Short Answer, Essay). Include point values. Add answer key at the end.`,
-    'Homework': `Create homework assignments that reinforce the lesson. Include clear instructions and estimated completion time.`,
-    'Answer Key': `Create a detailed answer key with full solutions and explanations for each answer.`,
-    'Project Ideas': `Suggest 5 creative project ideas related to this topic. For each: title, objective, materials needed, steps, and assessment criteria.`,
-    'Poster Content': `Create structured content for an educational poster: title, key points (5-7), visual suggestions, and a summary tagline.`,
+    'Lesson Plan': 'Create a complete lesson plan with: Objectives, Materials, Hook/Introduction, Main Activity (step-by-step), Practice, Closure/Summary, and Assessment.',
+    'Worksheet': 'Create a student worksheet with clear instructions and varied question types (fill-in, short answer, matching, etc.).',
+    'Quiz': 'Create a short quiz (10-15 questions) with mixed question types. Include an answer key at the end.',
+    'Exam': 'Create a comprehensive exam with multiple sections (MCQ, True/False, Short Answer, Essay). Include point values and an answer key.',
+    'Homework': 'Create homework assignments that reinforce the lesson. Include clear instructions and estimated completion time.',
+    'Answer Key': 'Create a detailed answer key with full solutions and explanations.',
+    'Project Ideas': 'Suggest 5 creative project ideas. For each: title, objective, materials, steps, and assessment criteria.',
+    'Poster Content': 'Create structured poster content: title, 5-7 key points, visual suggestions, and a summary tagline.',
   };
-
   return `You are an expert educational content creator for NBS-LNS school in Lebanon.
 
 Grade: ${grade}
@@ -635,9 +494,8 @@ Subject-specific guidance: ${subjectPrompts[subject] || 'Use clear, structured c
 Task: ${outputInstructions[outputType]}
 
 Output language: ${outputLang}
-${langNote}
 
-Format the output cleanly with clear headings and sections. Make it print-ready and practical for a Lebanese school classroom.`;
+Format output cleanly with markdown headings and sections. Make it print-ready and practical for a Lebanese school classroom.`;
 }
 
 async function generate() {
@@ -647,7 +505,6 @@ async function generate() {
   const topic = document.getElementById('topic-input').value.trim();
   const notes = document.getElementById('notes-input').value.trim();
   const errorEl = document.getElementById('error-msg');
-
   errorEl.classList.remove('visible');
 
   if (!grade) { errorEl.textContent = t.errorGrade; errorEl.classList.add('visible'); return; }
@@ -663,29 +520,23 @@ async function generate() {
   loading.classList.add('visible');
   outputCard.classList.remove('visible');
 
-  const prompt = buildPrompt(grade, subject, selectedOutput, topic, notes, currentLang);
+  const prompt = buildPrompt(grade, subject, selectedOutput, topic, notes);
 
   try {
-    const res = await fetch(GEMINI_URL, {
+    const res = await fetch(WORKER_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.7, maxOutputTokens: 2048 }
-      })
+      body: JSON.stringify({ prompt })
     });
-
     const data = await res.json();
-
-    if (!res.ok) throw new Error(data.error?.message || 'API error');
-
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!res.ok) throw new Error(data.error || 'API error');
+    const text = data.text;
     if (!text) throw new Error('No content returned');
 
-    document.getElementById('output-content').textContent = text;
+    lastGeneratedHTML = marked.parse(text);
+    document.getElementById('output-content').innerHTML = lastGeneratedHTML;
     outputCard.classList.add('visible');
     outputCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
   } catch (err) {
     errorEl.textContent = 'Error: ' + err.message;
     errorEl.classList.add('visible');
@@ -695,9 +546,98 @@ async function generate() {
   }
 }
 
+function preparePrintArea() {
+  const grade = document.getElementById('grade-select').value;
+  const subject = document.getElementById('subject-select').value;
+  const topic = document.getElementById('topic-input').value.trim();
+  const teacher = document.getElementById('teacher-input').value.trim();
+  const school = getSchoolName(grade);
+
+  document.getElementById('print-logo').src = getLogoPath(grade);
+  document.getElementById('print-school-name').textContent = school.en;
+  document.getElementById('print-school-arabic').textContent = school.ar;
+
+  document.getElementById('print-left').innerHTML =
+    `Name: ……………………………………<br>
+     Grade: ${grade}<br>
+     Subject: ${subject}<br>
+     Teacher: ${teacher || '………………………………'}`;
+
+  document.getElementById('print-right').innerHTML =
+    `Date: ……………………………………<br>
+     Material: ${topic}`;
+
+  document.getElementById('print-body').innerHTML = lastGeneratedHTML;
+}
+
+function printDoc() {
+  preparePrintArea();
+  document.getElementById('print-area').style.display = 'block';
+  window.print();
+  document.getElementById('print-area').style.display = 'none';
+}
+
+function downloadWord() {
+  const grade = document.getElementById('grade-select').value;
+  const subject = document.getElementById('subject-select').value;
+  const topic = document.getElementById('topic-input').value.trim();
+  const teacher = document.getElementById('teacher-input').value.trim();
+  const school = getSchoolName(grade);
+
+  const header = `
+    <table style="width:100%;border:2px solid #333;border-radius:10px;padding:10px">
+      <tr>
+        <td style="width:33%;vertical-align:top;font-size:12pt;line-height:1.8">
+          Name: ……………………………………<br>
+          Grade: ${grade}<br>
+          Subject: ${subject}<br>
+          Teacher: ${teacher || '………………………………'}
+        </td>
+        <td style="width:33%;text-align:center;vertical-align:middle">
+          <img src="${getLogoPath(grade)}" style="height:60px"><br>
+          <b style="color:#1a3a6b">${school.en}</b><br>
+          <span style="color:#c9a227;font-family:Arial">${school.ar}</span>
+        </td>
+        <td style="width:33%;text-align:right;vertical-align:top;font-size:12pt;line-height:1.8">
+          Date: ……………………………………<br>
+          Material: ${topic}
+        </td>
+      </tr>
+    </table>
+    <br>
+  `;
+
+  const html = `
+    <html xmlns:o='urn:schemas-microsoft-com:office:office'
+          xmlns:w='urn:schemas-microsoft-com:office:word'
+          xmlns='http://www.w3.org/TR/REC-html40'>
+    <head>
+      <meta charset='utf-8'>
+      <title>${subject} - ${topic}</title>
+      <!--[if gte mso 9]>
+      <xml><w:WordDocument><w:View>Print</w:View></w:WordDocument></xml>
+      <![endif]-->
+      <style>
+        body { font-family: 'Times New Roman', serif; font-size: 12pt; margin: 2cm; }
+        h1 { font-size: 16pt; } h2 { font-size: 14pt; } h3 { font-size: 12pt; }
+        table { border-collapse: collapse; width: 100%; }
+        td, th { border: 1px solid #999; padding: 5px; }
+      </style>
+    </head>
+    <body>${header}${lastGeneratedHTML}</body></html>`;
+
+  const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = (subject + '_' + topic + '_' + grade + '.doc').replace(/\s+/g, '_');
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 function copyOutput() {
   const t = translations[currentLang];
-  const text = document.getElementById('output-content').textContent;
+  const text = document.getElementById('output-content').innerText;
   navigator.clipboard.writeText(text).then(() => {
     const btn = document.getElementById('copy-btn');
     btn.textContent = t.copied;
