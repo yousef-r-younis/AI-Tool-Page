@@ -648,6 +648,12 @@ async function generate() {
     const text = data.text;
     if (!text) throw new Error('No content returned');
 
+    // Show which API was used
+    const badge = document.getElementById('output-badge');
+    badge.textContent = data.api === 'openai' ? '✓ GPT-4o-mini' : '✓ Llama 3.3';
+    badge.style.background = data.api === 'openai' ? '#e0f2fe' : '#f0fdf4';
+    badge.style.color = data.api === 'openai' ? '#0369a1' : '#16A34A';
+
     lastGeneratedHTML = marked.parse(text);
     document.getElementById('output-content').innerHTML = lastGeneratedHTML;
     outputCard.classList.add('visible');
