@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>NBS-LNS Teacher AI Assistant</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PptxGenJS/3.12.0/pptxgen.bundled.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Tajawal:wght@400;500;700&display=swap');
 
@@ -249,6 +250,7 @@
     font-size: 13px;
   }
   .upload-box:hover { border-color: var(--primary); background: var(--primary-light); }
+  .slides-btn:hover { background: #ffedd5 !important; }
   .upload-box.has-file { border-color: #16A34A; background: #f0fdf4; color: #16A34A; }
 
   @media (max-width: 600px) {
@@ -396,6 +398,8 @@
         <button class="action-btn copy-btn" onclick="copyOutput()" id="copy-btn">📋 Copy</button>
         <button class="action-btn print-btn" onclick="printDoc()">🖨️ Print / PDF</button>
         <button class="action-btn word-btn" onclick="downloadWord()">📄 Word</button>
+        <button class="action-btn slides-btn" id="slides-btn" onclick="downloadSlides()" style="display:none;background:#FFF7ED;color:#C2410C">🎞️ Download Slides</button>
+        <button class="action-btn" id="img-download-btn" onclick="downloadImage()" style="display:none;background:#FDF4FF;color:#7E22CE">⬇️ Download Image</button>
       </div>
     </div>
     <div class="output-content" id="output-content"></div>
@@ -424,6 +428,8 @@ const WORKER_URL = "https://gemini-proxy.yousef-r-younis.workers.dev";
 let currentLang = 'en';
 let selectedOutput = '';
 let lastGeneratedHTML = '';
+let lastSlidesData = null;
+let lastImageUrl = null;
 let uploadedContent = '';
 
 const translations = {
@@ -443,8 +449,8 @@ const translations = {
     copyBtn: "📋 Copy", copied: "✓ Copied!",
     errorGrade: "Please select a grade.", errorSubject: "Please select a subject.",
     errorOutput: "Please select an output type.", errorTopic: "Please enter a topic.",
-    outputTypes: ["📋 Lesson Plan","📝 Worksheet","❓ Quiz","📄 Exam","🏠 Homework","✅ Answer Key","💡 Project Ideas","🖼️ Poster Content"],
-    outputValues: ["Lesson Plan","Worksheet","Quiz","Exam","Homework","Answer Key","Project Ideas","Poster Content"],
+    outputTypes: ["📋 Lesson Plan","📝 Worksheet","❓ Quiz","📄 Exam","🏠 Homework","✅ Answer Key","💡 Project Ideas","🖼️ Poster Content","🎞️ Slides","🖼️ Image"],
+    outputValues: ["Lesson Plan","Worksheet","Quiz","Exam","Homework","Answer Key","Project Ideas","Poster Content","Slides","Image"],
   },
   ar: {
     headerTitle: "المساعد التعليمي الذكي - NBS-LNS",
@@ -462,8 +468,8 @@ const translations = {
     copyBtn: "📋 نسخ", copied: "✓ تم النسخ!",
     errorGrade: "يرجى اختيار الصف.", errorSubject: "يرجى اختيار المادة.",
     errorOutput: "يرجى اختيار نوع المحتوى.", errorTopic: "يرجى إدخال الموضوع.",
-    outputTypes: ["📋 خطة درس","📝 ورقة عمل","❓ اختبار قصير","📄 امتحان","🏠 واجب منزلي","✅ مفتاح الإجابات","💡 أفكار مشاريع","🖼️ محتوى بوستر"],
-    outputValues: ["Lesson Plan","Worksheet","Quiz","Exam","Homework","Answer Key","Project Ideas","Poster Content"],
+    outputTypes: ["📋 خطة درس","📝 ورقة عمل","❓ اختبار قصير","📄 امتحان","🏠 واجب منزلي","✅ مفتاح الإجابات","💡 أفكار مشاريع","🖼️ محتوى بوستر","🎞️ شرائح","🖼️ صورة"],
+    outputValues: ["Lesson Plan","Worksheet","Quiz","Exam","Homework","Answer Key","Project Ideas","Poster Content","Slides","Image"],
   }
 };
 
@@ -654,8 +660,57 @@ async function generate() {
     badge.style.background = data.api === 'openai' ? '#e0f2fe' : '#f0fdf4';
     badge.style.color = data.api === 'openai' ? '#0369a1' : '#16A34A';
 
-    lastGeneratedHTML = marked.parse(text);
-    document.getElementById('output-content').innerHTML = lastGeneratedHTML;
+    const isSlides = selectedOutput === 'Slides';
+    const isImage = selectedOutput === 'Image';
+    document.getElementById('slides-btn').style.display = isSlides ? 'inline-block' : 'none';
+    document.getElementById('img-download-btn').style.display = isImage ? 'inline-block' : 'none';
+
+    if (isImage) {
+      // Parse image prompt from AI response
+      try {
+        const clean = text.replace(/```json|```/g, '').trim();
+        const imgData = JSON.parse(clean);
+        const encodedPrompt = encodeURIComponent('educational illustration: ' + imgData.prompt + ', clean, colorful, school appropriate, no text');
+        const imageUrl = 'https://image.pollinations.ai/prompt/' + encodedPrompt + '?width=1024&height=768&nologo=true&seed=' + Math.floor(Math.random()*9999);
+        lastImageUrl = imageUrl;
+        lastGeneratedHTML = '<div style="text-align:center">' +
+          '<div style="font-size:12px;color:var(--muted);margin-bottom:12px">Generating image... this may take 10-20 seconds</div>' +
+          '<img src="' + imageUrl + '" style="max-width:100%;border-radius:8px;border:1px solid var(--border)" ' +
+          'onload="this.previousElementSibling.style.display=\'none\'" ' +
+          'onerror="this.previousElementSibling.textContent=\'Image generation failed. Try again.\'">' +
+          '<div style="font-size:11px;color:var(--muted);margin-top:8px">💡 Prompt: ' + imgData.prompt + '</div>' +
+          '</div>';
+      } catch(e) {
+        lastGeneratedHTML = '<p>Could not generate image. Try again.</p>';
+        lastImageUrl = null;
+      }
+      lastSlidesData = null;
+      document.getElementById('output-content').innerHTML = lastGeneratedHTML;
+    } else if (isSlides) {
+      // Parse and preview slides
+      try {
+        const clean = text.replace(/```json|```/g, '').trim();
+        const slides = JSON.parse(clean);
+        lastSlidesData = slides;
+        lastGeneratedHTML = slides.map((s, i) =>
+          '<div style="border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:12px;background:white">' +
+          '<div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Slide ' + (i+1) + '</div>' +
+          '<div style="font-size:16px;font-weight:700;color:var(--primary);margin-bottom:8px">' + s.title + '</div>' +
+          (s.bullets && s.bullets.length ? '<ul style="margin:0 0 8px 18px">' + s.bullets.map(b => '<li style="margin:3px 0;font-size:13px">' + b + '</li>').join('') + '</ul>' : '') +
+          (s.note ? '<div style="font-size:11px;color:var(--muted);border-top:1px solid var(--border);padding-top:6px;margin-top:6px">🗒 ' + s.note + '</div>' : '') +
+          '</div>'
+        ).join('');
+      } catch(e) {
+        lastGeneratedHTML = marked.parse(text);
+        lastSlidesData = null;
+      }
+    } else {
+      lastSlidesData = null;
+      lastGeneratedHTML = marked.parse(text);
+    }
+    if (!isImage) {
+      document.getElementById('output-content').innerHTML = lastGeneratedHTML;
+    }
     outputCard.classList.add('visible');
     outputCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
   } catch (err) {
@@ -785,6 +840,114 @@ async function downloadWord() {
   a.download = (subject + '_' + topic + '_' + grade + '.doc').replace(/\s+/g, '_');
   a.click();
   URL.revokeObjectURL(url);
+}
+
+function downloadImage() {
+  if (!lastImageUrl) { alert('No image available.'); return; }
+  const a = document.createElement('a');
+  a.href = lastImageUrl;
+  a.download = 'educational_image.jpg';
+  a.target = '_blank';
+  a.click();
+}
+
+function downloadSlides() {
+  if (!lastSlidesData) { alert('No slides data available.'); return; }
+
+  const grade = document.getElementById('grade-select').value;
+  const subject = document.getElementById('subject-select').value;
+  const topic = document.getElementById('topic-input').value.trim();
+  const school = getSchoolName(grade);
+
+  const pptx = new PptxGenJS();
+  pptx.layout = 'LAYOUT_16x9';
+  pptx.theme = { headFontFace: 'Calibri', bodyFontFace: 'Calibri' };
+
+  const DARK_BLUE = '1a3a6b';
+  const GOLD = 'c9a227';
+  const WHITE = 'FFFFFF';
+  const LIGHT_BG = 'f0f4ff';
+
+  lastSlidesData.forEach((slideData, idx) => {
+    const slide = pptx.addSlide();
+
+    // Background
+    slide.background = { color: idx === 0 ? DARK_BLUE : WHITE };
+
+    // Top color bar (non-title slides)
+    if (idx > 0) {
+      slide.addShape(pptx.ShapeType.rect, {
+        x: 0, y: 0, w: '100%', h: 0.18,
+        fill: { color: DARK_BLUE }
+      });
+      // Bottom accent bar
+      slide.addShape(pptx.ShapeType.rect, {
+        x: 0, y: 6.9, w: '100%', h: 0.1,
+        fill: { color: GOLD }
+      });
+    }
+
+    if (idx === 0) {
+      // TITLE SLIDE
+      slide.addShape(pptx.ShapeType.rect, {
+        x: 0, y: 2.8, w: '100%', h: 0.06,
+        fill: { color: GOLD }
+      });
+      slide.addText(slideData.title, {
+        x: 0.5, y: 1.0, w: 9, h: 1.4,
+        fontSize: 36, bold: true, color: WHITE,
+        align: 'center', valign: 'middle'
+      });
+      if (slideData.bullets && slideData.bullets.length) {
+        slide.addText(slideData.bullets.join('  •  '), {
+          x: 0.5, y: 3.1, w: 9, h: 0.6,
+          fontSize: 16, color: 'c8d8f0',
+          align: 'center'
+        });
+      }
+      slide.addText(school.en, {
+        x: 0.5, y: 5.8, w: 9, h: 0.4,
+        fontSize: 13, color: GOLD, align: 'center', bold: true
+      });
+    } else {
+      // CONTENT SLIDE
+      // Title bar background
+      slide.addShape(pptx.ShapeType.rect, {
+        x: 0, y: 0.18, w: '100%', h: 0.85,
+        fill: { color: LIGHT_BG }
+      });
+      slide.addText(slideData.title, {
+        x: 0.3, y: 0.18, w: 9.4, h: 0.85,
+        fontSize: 22, bold: true, color: DARK_BLUE,
+        valign: 'middle'
+      });
+
+      // Bullets
+      if (slideData.bullets && slideData.bullets.length) {
+        const bulletObjs = slideData.bullets.map(b => ({
+          text: b,
+          options: { bullet: { type: 'bullet' }, fontSize: 16, color: '222222', breakLine: true, paraSpaceAfter: 6 }
+        }));
+        slide.addText(bulletObjs, {
+          x: 0.4, y: 1.2, w: 9.2, h: 5.0,
+          valign: 'top', lineSpacingMultiple: 1.3
+        });
+      }
+
+      // Speaker note
+      if (slideData.note) {
+        slide.addNotes(slideData.note);
+      }
+
+      // Slide number
+      slide.addText((idx + 1).toString(), {
+        x: 9.2, y: 6.85, w: 0.6, h: 0.2,
+        fontSize: 9, color: '999999', align: 'right'
+      });
+    }
+  });
+
+  pptx.writeFile({ fileName: (subject + '_' + topic + '_' + grade + '.pptx').replace(/\s+/g, '_') });
 }
 
 function copyOutput() {
