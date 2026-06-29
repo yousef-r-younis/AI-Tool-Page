@@ -264,7 +264,7 @@
 
 <header>
   <div class="header-logo">
-    <div class="logo-icon">🎓</div>
+    <img src="https://nbs-lns-ai.pages.dev/common%20logo.png" alt="NBS-LNS Logo" style="height:38px;object-fit:contain;background:white;border-radius:6px;padding:3px 6px">
     <div class="logo-text">
       <h1 id="header-title">NBS-LNS Teacher AI Assistant</h1>
       <p id="header-sub">Powered by AI</p>
@@ -347,6 +347,8 @@
       <button class="output-pill" data-value="Answer Key" onclick="selectOutput(this)">✅ Answer Key</button>
       <button class="output-pill" data-value="Project Ideas" onclick="selectOutput(this)">💡 Project Ideas</button>
       <button class="output-pill" data-value="Poster Content" onclick="selectOutput(this)">🖼️ Poster Content</button>
+      <button class="output-pill" data-value="Slides" onclick="selectOutput(this)">🎞️ Slides</button>
+      <button class="output-pill" data-value="Image" onclick="selectOutput(this)">🖼️ Image</button>
     </div>
   </div>
 
@@ -676,8 +678,8 @@ async function generate() {
         lastGeneratedHTML = '<div style="text-align:center">' +
           '<div style="font-size:12px;color:var(--muted);margin-bottom:12px">Generating image... this may take 10-20 seconds</div>' +
           '<img src="' + imageUrl + '" style="max-width:100%;border-radius:8px;border:1px solid var(--border)" ' +
-          'onload="this.previousElementSibling.style.display=\'none\'" ' +
-          'onerror="this.previousElementSibling.textContent=\'Image generation failed. Try again.\'">' +
+          "onload=\"this.previousElementSibling.style.display='none'\" " +
+          "onerror=\"this.previousElementSibling.textContent='Image generation failed. Try again.'\">" +
           '<div style="font-size:11px;color:var(--muted);margin-top:8px">💡 Prompt: ' + imgData.prompt + '</div>' +
           '</div>';
       } catch(e) {
