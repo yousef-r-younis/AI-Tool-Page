@@ -713,11 +713,7 @@ async function generate() {
           '</div>'
         ).join('');
       } catch(e) {
-        console.error('Slides parse error:', e, 'Raw text:', text);
-        // Show raw text so we can debug
-        lastGeneratedHTML = '<div style="background:#fef9c3;padding:16px;border-radius:8px;font-size:12px">' +
-          '<b>⚠️ Could not parse slides. Raw AI response:</b><br><br>' +
-          '<pre style="white-space:pre-wrap;font-size:11px">' + text.substring(0, 2000) + '</pre></div>';
+        lastGeneratedHTML = '<div style="background:#fef9c3;padding:16px;border-radius:8px;font-size:13px"><b>⚠️ Could not generate slides. Please try again.</b></div>';
         lastSlidesData = null;
       }
     } else {
