@@ -668,30 +668,23 @@ async function generate() {
     document.getElementById('img-download-btn').style.display = isImage ? 'inline-block' : 'none';
 
     if (isImage) {
-      // Parse image prompt from AI response
-      try {
-        const clean = text.replace(/```json|```/g, '').trim();
-        const imgData = JSON.parse(clean);
-        const encodedPrompt = encodeURIComponent('educational illustration: ' + imgData.prompt + ', clean, colorful, school appropriate, no text');
-        const imageUrl = 'https://image.pollinations.ai/prompt/' + encodedPrompt + '?width=1024&height=768&nologo=true&seed=' + Math.floor(Math.random()*9999);
-        lastImageUrl = imageUrl;
-        lastGeneratedHTML = '<div style="text-align:center">' +
-          '<div style="font-size:12px;color:var(--muted);margin-bottom:12px">Generating image... this may take 10-20 seconds</div>' +
-          '<img src="' + imageUrl + '" style="max-width:100%;border-radius:8px;border:1px solid var(--border)" ' +
-          "onload=\"this.previousElementSibling.style.display='none'\" " +
-          "onerror=\"this.previousElementSibling.textContent='Image generation failed. Try again.'\">" +
-          '<div style="font-size:11px;color:var(--muted);margin-top:8px">💡 Prompt: ' + imgData.prompt + '</div>' +
-          '</div>';
-      } catch(e) {
-        lastGeneratedHTML = '<p>Could not generate image. Try again.</p>';
-        lastImageUrl = null;
-      }
+      const cleanPrompt = text.replace(/[`]{3}json|[`]{3}/g, '').trim();
+      const encodedPrompt = encodeURIComponent('educational illustration: ' + cleanPrompt + ', clean, colorful, school appropriate, no text, no watermark');
+      const imageUrl = 'https://image.pollinations.ai/prompt/' + encodedPrompt + '?width=1024&height=768&nologo=true&seed=' + Math.floor(Math.random()*9999);
+      lastImageUrl = imageUrl;
       lastSlidesData = null;
+      lastGeneratedHTML = '<div style="text-align:center;padding:10px">' +
+        '<div id="img-loading-msg" style="font-size:13px;color:var(--muted);margin-bottom:16px">⏳ Generating image... this may take 10-20 seconds</div>' +
+        '<img src="' + imageUrl + '" style="max-width:100%;border-radius:10px;border:1px solid var(--border);box-shadow:0 4px 16px rgba(0,0,0,0.1)" ' +
+        `onload="document.getElementById('img-loading-msg').style.display='none'" ` +
+        "onerror=\"document.getElementById('img-loading-msg').textContent='❌ Image generation failed. Try a different topic.'\">" +
+        '<div style="font-size:11px;color:var(--muted);margin-top:10px;font-style:italic">💡 ' + cleanPrompt + '</div>' +
+        '</div>';
       document.getElementById('output-content').innerHTML = lastGeneratedHTML;
     } else if (isSlides) {
       // Parse and preview slides
       try {
-        const clean = text.replace(/```json|```/g, '').trim();
+        const clean = text.replace(/[`]{3}json|[`]{3}/g, '').trim();
         const slides = JSON.parse(clean);
         lastSlidesData = slides;
         lastGeneratedHTML = slides.map((s, i) =>
