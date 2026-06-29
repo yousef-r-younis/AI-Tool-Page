@@ -699,10 +699,51 @@ async function generate() {
       document.getElementById('output-content').innerHTML = buildImageHTML(imageUrl);
       lastGeneratedHTML = document.getElementById('output-content').innerHTML;
     } else if (isSlides) {
-      // Parse and preview slides
+      let slides = null;
       try {
-        const clean = text.replace(/[`]{3}json|[`]{3}/g, '').trim();
-        const slides = JSON.parse(clean);
+        // Try JSON first
+        const jsonStart = text.indexOf('[');
+        const jsonEnd = text.lastIndexOf(']');
+        if (jsonStart !== -1 && jsonEnd !== -1) {
+          try { slides = JSON.parse(text.substring(jsonStart, jsonEnd + 1)); } catch(e2) {}
+        }
+
+        // Fall back: parse markdown
+        if (!slides || !slides.length) {
+          slides = [];
+          const lines = text.split('\n');
+          let current = null;
+          const skipLine = /^(image|title|subtitle|text)[:\-]/i;
+          const cleanPrefix = /^(definition|equation|steps?|materials?|procedure|summary|experiment|bullet\s*points?)[:\-]\s*/i;
+          for (const line of lines) {
+            const t = line.trim();
+            if (!t) continue;
+            const hMatch = t.match(/^#{1,4}\s*(?:Slide\s*\d+[:\-]?\s*)?(.+)/i);
+            if (hMatch) {
+              const title = hMatch[1].replace(/[*_"=]/g,'').trim();
+              if (title) { if (current) slides.push(current); current = {title, bullets:[], note:''}; }
+              continue;
+            }
+            if (!current) continue;
+            const bMatch = t.match(/^\t*[*\-+]\s+(.+)/);
+            if (bMatch) {
+              const raw = bMatch[1].replace(/[*_]/g,'').trim();
+              if (!skipLine.test(raw)) {
+                const cleaned = raw.replace(cleanPrefix,'').replace(/^[""]|[""]$/g,'').trim();
+                if (cleaned && cleaned.length > 2) current.bullets.push(cleaned);
+              }
+              continue;
+            }
+            const nMatch = t.match(/^\d+\.\s+(.+)/);
+            if (nMatch) {
+              const item = nMatch[1].replace(/[*_]/g,'').trim();
+              if (item && !skipLine.test(item)) current.bullets.push(item);
+            }
+          }
+          if (current) slides.push(current);
+        }
+
+        if (!slides || !slides.length) throw new Error('No slides parsed');
         lastSlidesData = slides;
         lastGeneratedHTML = slides.map((s, i) =>
           '<div style="border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:12px;background:white">' +
@@ -714,9 +755,9 @@ async function generate() {
         ).join('');
       } catch(e) {
         lastGeneratedHTML = '<div style="background:#fef9c3;padding:16px;border-radius:8px;font-size:12px">' +
-          '<b>Error: ' + e.message + '</b><br>' +
-          '<b>slides parsed: ' + (slides ? slides.length + ' slides' : 'null') + '</b><br>' +
-          '<pre style="font-size:10px;white-space:pre-wrap">' + text.substring(0,500) + '</pre></div>';
+          '<b>Parse error: ' + e.message + '</b><br>' +
+          '<b>Slides found: ' + (slides ? slides.length : 0) + '</b><br>' +
+          '<pre style="font-size:10px;white-space:pre-wrap">' + text.substring(0,600) + '</pre></div>';
         lastSlidesData = null;
       }
     } else {
