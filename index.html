@@ -701,62 +701,85 @@ async function generate() {
     } else if (isSlides) {
       let slides = null;
       try {
-        // Try JSON first
-        const jsonStart = text.indexOf('[');
-        const jsonEnd = text.lastIndexOf(']');
-        if (jsonStart !== -1 && jsonEnd !== -1) {
-          try { slides = JSON.parse(text.substring(jsonStart, jsonEnd + 1)); } catch(e2) {}
-        }
+        // Parse markdown into slides
+        // Each ### heading = new slide, collect all bullets under it
+        slides = [];
+        const lines = text.split('\n');
+        let current = null;
+        const skipLine = /^(image|title|subtitle|text|equation)[:\-]/i;
 
-        // Fall back: parse markdown
-        if (!slides || !slides.length) {
-          slides = [];
-          const lines = text.split('\n');
-          let current = null;
-          const skipLine = /^(image|title|subtitle|text)[:\-]/i;
-          const cleanPrefix = /^(definition|equation|steps?|materials?|procedure|summary|experiment|bullet\s*points?)[:\-]\s*/i;
-          for (const line of lines) {
-            const t = line.trim();
-            if (!t) continue;
-            const hMatch = t.match(/^#{1,4}\s*(?:Slide\s*\d+[:\-]?\s*)?(.+)/i);
-            if (hMatch) {
-              const title = hMatch[1].replace(/[*_"=]/g,'').trim();
-              if (title) { if (current) slides.push(current); current = {title, bullets:[], note:''}; }
-              continue;
+        for (const line of lines) {
+          const t = line.trim();
+          if (!t) continue;
+
+          // Only ### (3 hashes) = slide title, ignore # and ##
+          const h3Match = t.match(/^###\s*(?:Slide\s*\d+[:\-]?\s*)?(.+)/i);
+          if (h3Match) {
+            const title = h3Match[1].replace(/[*_"=:]/g,'').trim();
+            if (title && title.length > 1) {
+              if (current) slides.push(current);
+              current = {title, bullets:[], note:''};
             }
-            if (!current) continue;
-            const bMatch = t.match(/^\t*[*\-+]\s+(.+)/);
-            if (bMatch) {
-              const raw = bMatch[1].replace(/[*_]/g,'').trim();
-              if (!skipLine.test(raw)) {
-                const cleaned = raw.replace(cleanPrefix,'').replace(/^[""]|[""]$/g,'').trim();
-                if (cleaned && cleaned.length > 2) current.bullets.push(cleaned);
-              }
-              continue;
-            }
-            const nMatch = t.match(/^\d+\.\s+(.+)/);
-            if (nMatch) {
-              const item = nMatch[1].replace(/[*_]/g,'').trim();
-              if (item && !skipLine.test(item)) current.bullets.push(item);
-            }
+            continue;
           }
-          if (current) slides.push(current);
+
+          if (!current) continue;
+
+          // Nested bullets (tab + * or +)
+          const nestedMatch = t.match(/^\t+[*+\-]\s+(.+)/);
+          if (nestedMatch) {
+            const raw = nestedMatch[1].replace(/[*_]/g,'').trim();
+            if (!skipLine.test(raw) && raw.length > 2) current.bullets.push(raw);
+            continue;
+          }
+
+          // Top-level bullets
+          const bulletMatch = t.match(/^[*\-+]\s+(.+)/);
+          if (bulletMatch) {
+            const raw = bulletMatch[1].replace(/[*_]/g,'').trim();
+            // Skip meta lines like "Title:", "Image:", "Text:", "Bullet points:"
+            if (skipLine.test(raw) || /^bullet\s*points?[:\-]/i.test(raw)) continue;
+            // Clean prefixes like "Definition:", "Summary:"
+            const cleaned = raw.replace(/^(definition|summary|equation|experiment|procedure)[:\-]\s*/i,'').replace(/^[""]|[""]$/g,'').trim();
+            if (cleaned && cleaned.length > 2) current.bullets.push(cleaned);
+            continue;
+          }
+
+          // Numbered list
+          const numMatch = t.match(/^\d+\.\s+(.+)/);
+          if (numMatch) {
+            const item = numMatch[1].replace(/[*_]/g,'').trim();
+            if (item && !skipLine.test(item)) current.bullets.push(item);
+          }
         }
+        if (current) slides.push(current);
+
+        // Merge slides that have no bullets into previous slide as a bullet
+        const merged = [];
+        for (let i = 0; i < slides.length; i++) {
+          if (slides[i].bullets.length === 0 && merged.length > 0) {
+            // Add title as bullet to previous slide only if it looks like content
+            merged[merged.length-1].bullets.push(slides[i].title);
+          } else {
+            merged.push(slides[i]);
+          }
+        }
+        slides = merged;
 
         if (!slides || !slides.length) throw new Error('No slides parsed');
         lastSlidesData = slides;
+
         lastGeneratedHTML = slides.map((s, i) =>
           '<div style="border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:12px;background:white">' +
-          '<div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Slide ' + (i+1) + '</div>' +
+          '<div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Slide ' + (i+1) + ' / ' + slides.length + '</div>' +
           '<div style="font-size:16px;font-weight:700;color:var(--primary);margin-bottom:8px">' + s.title + '</div>' +
-          (s.bullets && s.bullets.length ? '<ul style="margin:0 0 8px 18px">' + s.bullets.map(b => '<li style="margin:3px 0;font-size:13px">' + b + '</li>').join('') + '</ul>' : '') +
-          (s.note ? '<div style="font-size:11px;color:var(--muted);border-top:1px solid var(--border);padding-top:6px;margin-top:6px">🗒 ' + s.note + '</div>' : '') +
+          (s.bullets.length ? '<ul style="margin:0 0 8px 18px">' + s.bullets.map(b => '<li style="margin:3px 0;font-size:13px">' + b + '</li>').join('') + '</ul>' : '<p style="color:var(--muted);font-size:12px;font-style:italic">Title slide</p>') +
           '</div>'
         ).join('');
+
       } catch(e) {
         lastGeneratedHTML = '<div style="background:#fef9c3;padding:16px;border-radius:8px;font-size:12px">' +
           '<b>Parse error: ' + e.message + '</b><br>' +
-          '<b>Slides found: ' + (slides ? slides.length : 0) + '</b><br>' +
           '<pre style="font-size:10px;white-space:pre-wrap">' + text.substring(0,600) + '</pre></div>';
         lastSlidesData = null;
       }
@@ -908,7 +931,8 @@ function downloadImage() {
 }
 
 function downloadSlides() {
-  if (!lastSlidesData) { alert('No slides data available.'); return; }
+  console.log('lastSlidesData:', lastSlidesData);
+  if (!lastSlidesData) { alert('No slides data available. lastSlidesData is null.'); return; }
 
   const grade = document.getElementById('grade-select').value;
   const subject = document.getElementById('subject-select').value;
