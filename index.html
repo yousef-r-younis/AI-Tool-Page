@@ -365,10 +365,6 @@
       <label id="notes-label">Extra Notes (optional)</label>
       <textarea id="notes-input" placeholder="e.g. Focus on multiple choice, include diagrams, beginner level, 30 minutes..."></textarea>
     </div>
-    <div class="field" style="margin-top:14px;display:none" id="slide-count-field">
-      <label id="slide-count-label">Number of Slides (optional)</label>
-      <input type="number" id="slide-count-input" placeholder="e.g. 10" min="4" max="25" style="width:160px" />
-    </div>
     <div class="field" style="margin-top:14px">
       <label id="upload-label">Upload Material (optional)</label>
       <div class="upload-box" id="upload-box" onclick="document.getElementById('file-input').click()">
@@ -533,7 +529,6 @@ function selectOutput(btn) {
   document.querySelectorAll('.output-pill').forEach(p => p.classList.remove('selected'));
   btn.classList.add('selected');
   selectedOutput = btn.dataset.value;
-  document.getElementById('slide-count-field').style.display = selectedOutput === 'Slides' ? 'block' : 'none';
 }
 
 function getLogoPath(grade) {
@@ -548,7 +543,7 @@ function getSchoolName(grade) {
     : { en: 'National Brotherhood School', ar: 'مدرسة الأخوة الوطنية' };
 }
 
-function buildPrompt(grade, subject, outputType, topic, notes, material, slideCount) {
+function buildPrompt(grade, subject, outputType, topic, notes, material) {
   const outputLang = (subject === 'Arabic') ? 'Arabic' : 'English';
   const subjectPrompts = {
     'Physics': 'Include formulas, units, and real-world examples. Use structured sections.',
@@ -671,8 +666,7 @@ async function generate() {
   loading.classList.add('visible');
   outputCard.classList.remove('visible');
 
-  const slideCount = document.getElementById('slide-count-input').value.trim();
-  const prompt = buildPrompt(grade, subject, selectedOutput, topic, notes, uploadedContent, slideCount);
+  const prompt = buildPrompt(grade, subject, selectedOutput, topic, notes, uploadedContent);
 
   try {
     const res = await fetch(WORKER_URL, {
@@ -705,23 +699,88 @@ async function generate() {
       document.getElementById('output-content').innerHTML = buildImageHTML(imageUrl);
       lastGeneratedHTML = document.getElementById('output-content').innerHTML;
     } else if (isSlides) {
+      let slides = null;
       try {
-        // Extract JS code from response
-        let code = text.replace(/[`]{3}javascript|[`]{3}js|[`]{3}/g, '').trim();
-        // Remove any leading/trailing non-code lines
-        const firstPptx = code.indexOf('pptx.');
-        if (firstPptx > 0) code = code.substring(firstPptx);
+        // Parse markdown into slides
+        // Each ### heading = new slide, collect all bullets under it
+        slides = [];
+        const lines = text.split('\n');
+        let current = null;
+        const skipLine = /^(image|title|subtitle|text|equation)[:\-]/i;
 
-        lastSlidesData = code; // store the code
-        lastGeneratedHTML = '<div style="background:#f0f4ff;border-radius:10px;padding:20px;text-align:center">' +
-          '<div style="font-size:40px;margin-bottom:12px">🎞️</div>' +
-          '<div style="font-size:16px;font-weight:700;color:#1a3a6b;margin-bottom:6px">Slides Ready!</div>' +
-          '<div style="font-size:13px;color:#6B7280;">Click "Download Slides" to generate your PowerPoint file.</div>' +
-          '<div style="margin-top:16px;background:white;border-radius:8px;padding:12px;text-align:left;font-size:11px;color:#6B7280;font-family:monospace;max-height:200px;overflow-y:auto">' +
-          code.substring(0, 800) + '...</div>' +
-          '</div>';
+        for (const line of lines) {
+          const t = line.trim();
+          if (!t) continue;
+
+          // Only ### (3 hashes) = slide title, ignore # and ##
+          const h3Match = t.match(/^###\s*(?:Slide\s*\d+[:\-]?\s*)?(.+)/i);
+          if (h3Match) {
+            const title = h3Match[1].replace(/[*_"=:]/g,'').trim();
+            if (title && title.length > 1) {
+              if (current) slides.push(current);
+              current = {title, bullets:[], note:''};
+            }
+            continue;
+          }
+
+          if (!current) continue;
+
+          // Nested bullets (tab + * or +)
+          const nestedMatch = t.match(/^\t+[*+\-]\s+(.+)/);
+          if (nestedMatch) {
+            const raw = nestedMatch[1].replace(/[*_]/g,'').trim();
+            if (!skipLine.test(raw) && raw.length > 2) current.bullets.push(raw);
+            continue;
+          }
+
+          // Top-level bullets
+          const bulletMatch = t.match(/^[*\-+]\s+(.+)/);
+          if (bulletMatch) {
+            const raw = bulletMatch[1].replace(/[*_]/g,'').trim();
+            // Skip meta lines like "Title:", "Image:", "Text:", "Bullet points:"
+            if (skipLine.test(raw) || /^bullet\s*points?[:\-]/i.test(raw)) continue;
+            // Clean prefixes like "Definition:", "Summary:"
+            const cleaned = raw.replace(/^(definition|summary|equation|experiment|procedure)[:\-]\s*/i,'').replace(/^[""]|[""]$/g,'').trim();
+            if (cleaned && cleaned.length > 2) current.bullets.push(cleaned);
+            continue;
+          }
+
+          // Numbered list
+          const numMatch = t.match(/^\d+\.\s+(.+)/);
+          if (numMatch) {
+            const item = numMatch[1].replace(/[*_]/g,'').trim();
+            if (item && !skipLine.test(item)) current.bullets.push(item);
+          }
+        }
+        if (current) slides.push(current);
+
+        // Merge slides that have no bullets into previous slide as a bullet
+        const merged = [];
+        for (let i = 0; i < slides.length; i++) {
+          if (slides[i].bullets.length === 0 && merged.length > 0) {
+            // Add title as bullet to previous slide only if it looks like content
+            merged[merged.length-1].bullets.push(slides[i].title);
+          } else {
+            merged.push(slides[i]);
+          }
+        }
+        slides = merged;
+
+        if (!slides || !slides.length) throw new Error('No slides parsed');
+        lastSlidesData = slides;
+
+        lastGeneratedHTML = slides.map((s, i) =>
+          '<div style="border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:12px;background:white">' +
+          '<div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Slide ' + (i+1) + ' / ' + slides.length + '</div>' +
+          '<div style="font-size:16px;font-weight:700;color:var(--primary);margin-bottom:8px">' + s.title + '</div>' +
+          (s.bullets.length ? '<ul style="margin:0 0 8px 18px">' + s.bullets.map(b => '<li style="margin:3px 0;font-size:13px">' + b + '</li>').join('') + '</ul>' : '<p style="color:var(--muted);font-size:12px;font-style:italic">Title slide</p>') +
+          '</div>'
+        ).join('');
+
       } catch(e) {
-        lastGeneratedHTML = '<div style="background:#fef9c3;padding:16px;border-radius:8px"><b>Error: ' + e.message + '</b></div>';
+        lastGeneratedHTML = '<div style="background:#fef9c3;padding:16px;border-radius:8px;font-size:12px">' +
+          '<b>Parse error: ' + e.message + '</b><br>' +
+          '<pre style="font-size:10px;white-space:pre-wrap">' + text.substring(0,600) + '</pre></div>';
         lastSlidesData = null;
       }
     } else {
@@ -871,27 +930,104 @@ function downloadImage() {
   a.click();
 }
 
-async function downloadSlides() {
-  if (!lastSlidesData) { alert('No slides data available. Generate slides first.'); return; }
+function downloadSlides() {
+  console.log('lastSlidesData:', lastSlidesData);
+  if (!lastSlidesData) { alert('No slides data available. lastSlidesData is null.'); return; }
 
   const grade = document.getElementById('grade-select').value;
   const subject = document.getElementById('subject-select').value;
   const topic = document.getElementById('topic-input').value.trim();
   const school = getSchoolName(grade);
 
-  try {
-    const pptx = new PptxGenJS();
-    const logoBase64 = await getLogoAsBase64(getLogoPath(grade));
+  const pptx = new PptxGenJS();
+  pptx.layout = 'LAYOUT_16x9';
+  pptx.theme = { headFontFace: 'Calibri', bodyFontFace: 'Calibri' };
 
-    // Execute the AI-generated code
-    const fn = new Function('pptx', 'logoBase64', 'grade', 'subject', 'topic', 'school', lastSlidesData);
-    fn(pptx, logoBase64, grade, subject, topic, school);
+  const DARK_BLUE = '1a3a6b';
+  const GOLD = 'c9a227';
+  const WHITE = 'FFFFFF';
+  const LIGHT_BG = 'f0f4ff';
 
-    await pptx.writeFile({ fileName: (subject + '_' + topic + '_' + grade + '.pptx').replace(/\s+/g, '_') });
-  } catch(e) {
-    alert('Error generating slides: ' + e.message);
-    console.error(e);
-  }
+  lastSlidesData.forEach((slideData, idx) => {
+    const slide = pptx.addSlide();
+
+    // Background
+    slide.background = { color: idx === 0 ? DARK_BLUE : WHITE };
+
+    // Top color bar (non-title slides)
+    if (idx > 0) {
+      slide.addShape(pptx.ShapeType.rect, {
+        x: 0, y: 0, w: '100%', h: 0.18,
+        fill: { color: DARK_BLUE }
+      });
+      // Bottom accent bar
+      slide.addShape(pptx.ShapeType.rect, {
+        x: 0, y: 6.9, w: '100%', h: 0.1,
+        fill: { color: GOLD }
+      });
+    }
+
+    if (idx === 0) {
+      // TITLE SLIDE
+      slide.addShape(pptx.ShapeType.rect, {
+        x: 0, y: 2.8, w: '100%', h: 0.06,
+        fill: { color: GOLD }
+      });
+      slide.addText(slideData.title, {
+        x: 0.5, y: 1.0, w: 9, h: 1.4,
+        fontSize: 36, bold: true, color: WHITE,
+        align: 'center', valign: 'middle'
+      });
+      if (slideData.bullets && slideData.bullets.length) {
+        slide.addText(slideData.bullets.join('  •  '), {
+          x: 0.5, y: 3.1, w: 9, h: 0.6,
+          fontSize: 16, color: 'c8d8f0',
+          align: 'center'
+        });
+      }
+      slide.addText(school.en, {
+        x: 0.5, y: 5.8, w: 9, h: 0.4,
+        fontSize: 13, color: GOLD, align: 'center', bold: true
+      });
+    } else {
+      // CONTENT SLIDE
+      // Title bar background
+      slide.addShape(pptx.ShapeType.rect, {
+        x: 0, y: 0.18, w: '100%', h: 0.85,
+        fill: { color: LIGHT_BG }
+      });
+      slide.addText(slideData.title, {
+        x: 0.3, y: 0.18, w: 9.4, h: 0.85,
+        fontSize: 22, bold: true, color: DARK_BLUE,
+        valign: 'middle'
+      });
+
+      // Bullets
+      if (slideData.bullets && slideData.bullets.length) {
+        const bulletObjs = slideData.bullets.map(b => ({
+          text: b,
+          options: { bullet: { type: 'bullet' }, fontSize: 16, color: '222222', breakLine: true, paraSpaceAfter: 6 }
+        }));
+        slide.addText(bulletObjs, {
+          x: 0.4, y: 1.2, w: 9.2, h: 5.0,
+          valign: 'top', lineSpacingMultiple: 1.3
+        });
+      }
+
+      // Speaker note
+      if (slideData.note) {
+        slide.addNotes(slideData.note);
+      }
+
+      // Slide number
+      slide.addText((idx + 1).toString(), {
+        x: 9.2, y: 6.85, w: 0.6, h: 0.2,
+        fontSize: 9, color: '999999', align: 'right'
+      });
+    }
+  });
+
+  pptx.writeFile({ fileName: (subject + '_' + topic + '_' + grade + '.pptx').replace(/\s+/g, '_') });
 }
 
 function copyOutput() {
