@@ -713,7 +713,10 @@ async function generate() {
           '</div>'
         ).join('');
       } catch(e) {
-        lastGeneratedHTML = '<div style="background:#fef9c3;padding:16px;border-radius:8px;font-size:13px"><b>⚠️ Could not generate slides. Please try again.</b></div>';
+        lastGeneratedHTML = '<div style="background:#fef9c3;padding:16px;border-radius:8px;font-size:12px">' +
+          '<b>Error: ' + e.message + '</b><br>' +
+          '<b>slides value: ' + JSON.stringify(slides) + '</b><br>' +
+          '<pre style="font-size:10px;white-space:pre-wrap">' + text.substring(0,500) + '</pre></div>';
         lastSlidesData = null;
       }
     } else {
